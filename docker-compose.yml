@@ -12,8 +12,8 @@ services:
       - ALPR_DEVICE=auto
       - HOST=0.0.0.0
       - PORT=7862
-      - VEHICLE_WEIGHT=weights/vehicle/vehicle_yolov9s_640_30oct2025.pt
-      - PLATE_WEIGHT=weights/plate/plate_yolo12n_640_2025.pt
+      - VEHICLE_WEIGHT=weights/vehicle/vehicle_detector.pt
+      - PLATE_WEIGHT=weights/plate/license_plate_detector.pt
       - VEHICLE_CONF=0.6 
       - PLATE_CONF=0.25
       - OCR_THRESHOLD=0.9

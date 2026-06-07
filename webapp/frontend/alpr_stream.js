@@ -23,6 +23,18 @@ document.addEventListener('DOMContentLoaded', () => {
   const fpsText = document.getElementById('fps-text');
   const streamInfo = document.getElementById('stream-info');
   const refreshCamerasBtn = document.getElementById('refresh-cameras');
+
+  // Upload / source toggle elements
+  const sourceCameraBtn = document.getElementById('source-camera');
+  const sourceUploadBtn = document.getElementById('source-upload');
+  const cameraSection = document.getElementById('camera-section');
+  const uploadSection = document.getElementById('upload-section');
+  const videoFileInput = document.getElementById('video-file-input');
+  const fileDropZone = document.getElementById('file-drop-zone');
+  const fileNameDisplay = document.getElementById('file-name-display');
+  const uploadProgressWrap = document.getElementById('upload-progress-wrap');
+  const uploadProgressBar = document.getElementById('upload-progress-bar');
+  const uploadProgressText = document.getElementById('upload-progress-text');
   
   const CUSTOM_OPTION_VALUE = '__custom';
   const TRANSPORT_MJPEG = 'mjpeg';
@@ -57,6 +69,8 @@ document.addEventListener('DOMContentLoaded', () => {
   let streamStartTime = null;
   let reconnectAttempts = 0;
   const MAX_RECONNECT_ATTEMPTS = 3;
+  let currentSourceType = 'camera'; // 'camera' | 'upload'
+  let pendingUploadXhr = null;
 
   function updateConnectionStatus(status, text) {
     if (!connectionBadge) return;
@@ -187,6 +201,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function stopStream(message = 'No stream running') {
     teardownWebRTC();
     hideAllStreams();
+    hideUploadProgress();
     currentSrc = '';
     currentTransport = getSelectedTransport();
     paused = false;
@@ -359,6 +374,172 @@ document.addEventListener('DOMContentLoaded', () => {
     } finally {
       vehicleModelSelect.disabled = false;
     }
+  }
+
+  function switchSourceType(type) {
+    currentSourceType = type;
+    if (type === 'upload') {
+      if (cameraSection) cameraSection.style.display = 'none';
+      if (uploadSection) uploadSection.style.display = 'block';
+      if (sourceCameraBtn) sourceCameraBtn.classList.remove('active');
+      if (sourceUploadBtn) sourceUploadBtn.classList.add('active');
+    } else {
+      if (cameraSection) cameraSection.style.display = 'block';
+      if (uploadSection) uploadSection.style.display = 'none';
+      if (sourceCameraBtn) sourceCameraBtn.classList.add('active');
+      if (sourceUploadBtn) sourceUploadBtn.classList.remove('active');
+    }
+    stopStream('Configure your source and click Start.');
+  }
+
+  function setUploadProgress(ratio, label) {
+    if (!uploadProgressWrap) return;
+    uploadProgressWrap.style.display = ratio >= 0 ? 'block' : 'none';
+    if (uploadProgressBar) {
+      uploadProgressBar.style.width = `${Math.round(ratio * 100)}%`;
+    }
+    if (uploadProgressText) {
+      uploadProgressText.textContent = label || `Uploading… ${Math.round(ratio * 100)}%`;
+    }
+  }
+
+  function hideUploadProgress() {
+    if (uploadProgressWrap) uploadProgressWrap.style.display = 'none';
+    if (pendingUploadXhr) {
+      pendingUploadXhr.abort();
+      pendingUploadXhr = null;
+    }
+  }
+
+  function uploadVideoFile(file, onProgress) {
+    return new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      pendingUploadXhr = xhr;
+      xhr.open('POST', '/api/upload_video');
+      xhr.upload.addEventListener('progress', (e) => {
+        if (e.lengthComputable) onProgress(e.loaded / e.total);
+      });
+      xhr.addEventListener('load', () => {
+        pendingUploadXhr = null;
+        if (xhr.status >= 200 && xhr.status < 300) {
+          try {
+            resolve(JSON.parse(xhr.responseText));
+          } catch {
+            reject(new Error('Invalid server response'));
+          }
+        } else {
+          let msg = `Upload failed (${xhr.status})`;
+          try {
+            const body = JSON.parse(xhr.responseText);
+            if (body && body.detail) msg = body.detail;
+          } catch { /* ignore */ }
+          reject(new Error(msg));
+        }
+      });
+      xhr.addEventListener('error', () => { pendingUploadXhr = null; reject(new Error('Network error during upload')); });
+      xhr.addEventListener('abort', () => { pendingUploadXhr = null; reject(new Error('Upload cancelled')); });
+      const formData = new FormData();
+      formData.append('file', file);
+      xhr.send(formData);
+    });
+  }
+
+  function startUploadMjpegStream(videoId, config) {
+    teardownWebRTC();
+    const params = new URLSearchParams();
+    if (typeof config.vconf !== 'undefined') params.set('vconf', String(config.vconf));
+    if (typeof config.pconf !== 'undefined') params.set('pconf', String(config.pconf));
+    if (typeof config.readPlate !== 'undefined') params.set('read_plate', String(config.readPlate));
+    const query = params.toString();
+    const src = `/api/alpr_stream/upload/${videoId}${query ? '?' + query : ''}`;
+    paused = false;
+    pauseBtn.querySelector('span').textContent = 'Pause';
+    showMjpegStream(src);
+  }
+
+  async function startUploadStream(config) {
+    const file = videoFileInput ? videoFileInput.files[0] : null;
+    if (!file) {
+      if (fileDropZone) fileDropZone.classList.add('drop-zone-error');
+      showPlaceholder('Please select an MP4 video file first.');
+      return;
+    }
+    if (fileDropZone) fileDropZone.classList.remove('drop-zone-error');
+
+    const MAX_SIZE = 200 * 1024 * 1024;
+    if (file.size > MAX_SIZE) {
+      showPlaceholder('File exceeds the 200 MB limit. Please choose a smaller video.');
+      return;
+    }
+
+    showLoading(true);
+    updateConnectionStatus('connecting', 'Uploading…');
+    setUploadProgress(0, 'Uploading… 0%');
+
+    let payload;
+    try {
+      payload = await uploadVideoFile(file, (ratio) => {
+        setUploadProgress(ratio, `Uploading… ${Math.round(ratio * 100)}%`);
+      });
+    } catch (err) {
+      hideUploadProgress();
+      showLoading(false);
+      showPlaceholder(`Upload failed: ${err.message}`);
+      updateConnectionStatus('error', 'Upload Failed');
+      return;
+    }
+
+    setUploadProgress(1, 'Processing…');
+    lastStartConfig = { ...config, sourceType: 'upload', videoId: payload.video_id };
+    startUploadMjpegStream(payload.video_id, config);
+    hideUploadProgress();
+  }
+
+  // Source toggle listeners
+  if (sourceCameraBtn) {
+    sourceCameraBtn.addEventListener('click', () => {
+      if (currentSourceType !== 'camera') switchSourceType('camera');
+    });
+  }
+  if (sourceUploadBtn) {
+    sourceUploadBtn.addEventListener('click', () => {
+      if (currentSourceType !== 'upload') switchSourceType('upload');
+    });
+  }
+
+  // File input interactions
+  if (videoFileInput) {
+    videoFileInput.addEventListener('change', () => {
+      const file = videoFileInput.files[0];
+      if (fileDropZone) fileDropZone.classList.remove('drop-zone-error');
+      if (fileNameDisplay) {
+        fileNameDisplay.textContent = file ? file.name : 'No file selected';
+      }
+      hideUploadProgress();
+    });
+  }
+
+  if (fileDropZone) {
+    fileDropZone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      fileDropZone.classList.add('drag-over');
+    });
+    fileDropZone.addEventListener('dragleave', () => {
+      fileDropZone.classList.remove('drag-over');
+    });
+    fileDropZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      fileDropZone.classList.remove('drag-over');
+      const file = e.dataTransfer && e.dataTransfer.files[0];
+      if (file && videoFileInput) {
+        const dt = new DataTransfer();
+        dt.items.add(file);
+        videoFileInput.files = dt.files;
+        if (fileNameDisplay) fileNameDisplay.textContent = file.name;
+        fileDropZone.classList.remove('drop-zone-error');
+        hideUploadProgress();
+      }
+    });
   }
 
   function buildStreamConfig(url, mode) {
@@ -640,6 +821,23 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   startBtn.addEventListener('click', async () => {
+    if (currentSourceType === 'upload') {
+      startBtn.disabled = true;
+      try {
+        const mode = getSelectedMode();
+        const config = {
+          mode,
+          vconf: vconf ? vconf.value : undefined,
+          pconf: pconf ? pconf.value : undefined,
+          readPlate: readPlateToggle ? readPlateToggle.checked : undefined,
+        };
+        await startUploadStream(config);
+      } finally {
+        startBtn.disabled = false;
+      }
+      return;
+    }
+
     const url = streamInput.value.trim();
     if (!url) {
       streamInput.classList.add('input-error');

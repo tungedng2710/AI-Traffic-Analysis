@@ -8,6 +8,7 @@ import cv2
 import sys
 import argparse
 from pathlib import Path
+from datetime import datetime
 
 
 class TrafficAIClient:
@@ -97,7 +98,7 @@ def process_image_example(client, image_path):
             print()
 
 
-def process_video_example(client, video_path, max_frames=None):
+def process_video_example(client, video_path, max_frames=None, output_path=None):
     """Example: Process a video file"""
     print(f"\n=== Processing Video: {video_path} ===")
     
@@ -111,7 +112,29 @@ def process_video_example(client, video_path, max_frames=None):
     
     total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
     fps = cap.get(cv2.CAP_PROP_FPS)
+    width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+    height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
     print(f"Video info: {total_frames} frames @ {fps:.2f} FPS")
+
+    if output_path:
+        output_path = Path(output_path)
+        if output_path.suffix == "":
+            output_path = output_path / f"{Path(video_path).stem}_annotated.mp4"
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+    else:
+        output_dir = Path("data")
+        output_dir.mkdir(parents=True, exist_ok=True)
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        output_path = output_dir / f"{Path(video_path).stem}_annotated_{timestamp}.mp4"
+
+    fourcc = cv2.VideoWriter_fourcc(*"mp4v")
+    out = cv2.VideoWriter(str(output_path), fourcc, fps if fps > 0 else 25.0, (width, height))
+    if not out.isOpened():
+        print(f"Error: Could not create output video: {output_path}")
+        cap.release()
+        return
+
+    print(f"Saving annotated output to: {output_path}")
     
     frame_num = 0
     detected_plates = set()
@@ -135,11 +158,42 @@ def process_video_example(client, video_path, max_frames=None):
             if detections:
                 print(f"Frame {frame_num}: {len(detections)} vehicles")
                 for det in detections:
+                    bbox = det.get('bbox', {})
+                    x1 = int(bbox.get('x1', 0))
+                    y1 = int(bbox.get('y1', 0))
+                    x2 = int(bbox.get('x2', 0))
+                    y2 = int(bbox.get('y2', 0))
+
+                    # Draw detection bounding box and a compact label for quick inspection.
+                    cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
+                    label_parts = [
+                        f"ID {det.get('track_id', '?')}",
+                        det.get('vehicle_type', 'Unknown')
+                    ]
+
                     plate = det.get('license_plate')
                     if plate and plate not in detected_plates:
                         detected_plates.add(plate)
                         print(f"  NEW PLATE: {plate} "
                               f"(Vehicle {det['track_id']}, {det.get('vehicle_type', 'Unknown')})")
+
+                    if plate:
+                        label_parts.append(plate)
+
+                    label = " | ".join(label_parts)
+                    text_y = max(20, y1 - 10)
+                    cv2.putText(
+                        frame,
+                        label,
+                        (x1, text_y),
+                        cv2.FONT_HERSHEY_SIMPLEX,
+                        0.55,
+                        (0, 255, 0),
+                        2,
+                        cv2.LINE_AA,
+                    )
+
+        out.write(frame)
         
         frame_num += 1
         
@@ -148,10 +202,12 @@ def process_video_example(client, video_path, max_frames=None):
             print(f"Processed {frame_num}/{total_frames if max_frames is None else max_frames} frames...")
     
     cap.release()
+    out.release()
     
     print(f"\nProcessing complete!")
     print(f"Total frames processed: {frame_num}")
     print(f"Unique license plates detected: {len(detected_plates)}")
+    print(f"Annotated video saved to: {output_path}")
     if detected_plates:
         print("Detected plates:", sorted(detected_plates))
 
@@ -180,6 +236,11 @@ def main():
         "--max-frames",
         type=int,
         help="Maximum number of frames to process from video"
+    )
+    parser.add_argument(
+        "--output",
+        type=str,
+        help="Output file path (or directory) for annotated video"
     )
     parser.add_argument(
         "--health",
@@ -229,7 +290,7 @@ def main():
         if not Path(args.video).exists():
             print(f"Error: Video file not found: {args.video}")
             sys.exit(1)
-        process_video_example(client, args.video, args.max_frames)
+        process_video_example(client, args.video, args.max_frames, args.output)
 
 
 if __name__ == "__main__":

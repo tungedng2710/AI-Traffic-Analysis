@@ -1,4 +1,7 @@
 import asyncio
+import tempfile
+import uuid
+import re
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -8,7 +11,7 @@ import cv2
 import numpy as np
 import json
 from types import SimpleNamespace
-from typing import Optional, Set
+from typing import Optional, Set, Dict
 from threading import Lock
 from utils.traffic_analysis import TrafficAnalysisService
 import os
@@ -19,6 +22,13 @@ from aiortc.mediastreams import MediaStreamError
 from webapp.backend.dashboard_api import router as dashboard_router
 
 DEFAULT_DEVICE = os.environ.get("ALPR_DEVICE", "auto")
+
+MAX_UPLOAD_SIZE = 200 * 1024 * 1024  # 200 MB
+UPLOAD_DIR = Path(tempfile.gettempdir()) / "alpr_uploads"
+UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+_VIDEO_ID_RE = re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
+uploaded_videos: Dict[str, Path] = {}
+uploaded_videos_lock = Lock()
 
 app = FastAPI()
 
@@ -43,8 +53,8 @@ VEHICLE_WEIGHT_EXTENSIONS = {".pt", ".pth"}
 
 # Initialize ALPR tracker (tracking + OCR) using shared core
 opts = SimpleNamespace(
-    vehicle_weight=str(REPO_ROOT / "weights" / "vehicle" / "vehicle_yolo11s_640_30oct2025.pt"),
-    plate_weight=str(REPO_ROOT / "weights" / "plate" / "plate_yolo12n_640_2025.pt"),
+    vehicle_weight=str(REPO_ROOT / "weights" / "vehicle" / "vehicle_detector.pt"),
+    plate_weight=str(REPO_ROOT / "weights" / "plate" / "license_plate_detector.pt"),
     dsort_weight=str(REPO_ROOT / "weights" / "tracking" / "deepsort" / "ckpt.t7"),
     vconf=0.6,
     pconf=0.25,
@@ -310,6 +320,81 @@ async def webrtc_offer(payload: dict):
         raise HTTPException(status_code=500, detail=f"WebRTC negotiation failed: {exc}") from exc
 
     return {"sdp": pc.localDescription.sdp, "type": pc.localDescription.type}
+
+
+@app.post("/api/upload_video")
+async def upload_video(file: UploadFile = File(...)):
+    content_type = (file.content_type or "").lower()
+    filename = (file.filename or "").lower()
+    is_video = (
+        "video" in content_type
+        or content_type == "application/octet-stream"
+        or filename.endswith(".mp4")
+        or filename.endswith(".mpeg")
+    )
+    if not is_video:
+        raise HTTPException(status_code=400, detail="Only MP4 video files are accepted")
+
+    video_id = str(uuid.uuid4())
+    dest = UPLOAD_DIR / f"{video_id}.mp4"
+    total = 0
+    try:
+        with open(dest, "wb") as f:
+            while True:
+                chunk = await file.read(1024 * 1024)  # 1 MB chunks
+                if not chunk:
+                    break
+                total += len(chunk)
+                if total > MAX_UPLOAD_SIZE:
+                    raise HTTPException(status_code=413, detail="File exceeds 200 MB limit")
+                f.write(chunk)
+    except HTTPException:
+        dest.unlink(missing_ok=True)
+        raise
+    except Exception as exc:
+        dest.unlink(missing_ok=True)
+        raise HTTPException(status_code=500, detail="Failed to save video") from exc
+
+    with uploaded_videos_lock:
+        uploaded_videos[video_id] = dest
+    return {"video_id": video_id}
+
+
+def _gen_frames_upload(
+    path: Path,
+    video_id: str,
+    vconf: Optional[float] = None,
+    pconf: Optional[float] = None,
+    read_plate: Optional[bool] = None,
+):
+    try:
+        yield from gen_frames(str(path), True, vconf=vconf, pconf=pconf, read_plate=read_plate)
+    finally:
+        try:
+            path.unlink(missing_ok=True)
+        except Exception:
+            pass
+        with uploaded_videos_lock:
+            uploaded_videos.pop(video_id, None)
+
+
+@app.get("/api/alpr_stream/upload/{video_id}")
+def stream_uploaded_video(
+    video_id: str,
+    vconf: Optional[float] = None,
+    pconf: Optional[float] = None,
+    read_plate: Optional[bool] = None,
+):
+    if not _VIDEO_ID_RE.match(video_id):
+        raise HTTPException(status_code=400, detail="Invalid video ID")
+    with uploaded_videos_lock:
+        path = uploaded_videos.get(video_id)
+    if path is None or not path.exists():
+        raise HTTPException(status_code=404, detail="Video not found or expired")
+    return StreamingResponse(
+        _gen_frames_upload(path, video_id, vconf=vconf, pconf=pconf, read_plate=read_plate),
+        media_type="multipart/x-mixed-replace; boundary=frame",
+    )
 
 
 @app.post("/api/alpr")

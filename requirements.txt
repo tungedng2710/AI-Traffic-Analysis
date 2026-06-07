@@ -1,9 +1,11 @@
 fastapi
 uvicorn
+python-multipart
 pydantic
 ultralytics
 opencv-python-headless
 numpy
+pillow
 ton-ocr
 aiortc
 paddleocr

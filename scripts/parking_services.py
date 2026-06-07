@@ -57,7 +57,7 @@ from utils.utils import check_legit_plate, crop_expanded_plate
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_WEIGHT_PATH = os.environ.get(
     "PLATE_MODEL_PATH",
-    str(REPO_ROOT / "weights" / "license_plate_detector.pt"),
+    str(REPO_ROOT / "weights" / "plate" / "license_plate_detector.pt"),
 )
 DEFAULT_DEVICE = os.environ.get("PLATE_DEVICE", "cpu")
 DEFAULT_DET_CONF = float(os.environ.get("PLATE_CONF_THRESHOLD", 0.25))

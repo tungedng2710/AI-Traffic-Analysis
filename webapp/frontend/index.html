@@ -72,15 +72,59 @@
         </div>
 
         <div class="control-group">
-          <label class="control-label" for="camera-select">Camera Preset</label>
-          <select id="camera-select">
-            <option value="__custom" selected>Custom URL</option>
-          </select>
+          <label class="control-label">Source</label>
+          <div class="source-toggle">
+            <button class="source-btn active" id="source-camera" data-source="camera">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+              Live Camera
+            </button>
+            <button class="source-btn" id="source-upload" data-source="upload">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              Video File
+            </button>
+          </div>
         </div>
 
-        <div class="control-group">
-          <label class="control-label" for="stream-url">Stream URL</label>
-          <input id="stream-url" type="text" placeholder="rtsp://username:password@ip:port/path" autocomplete="off" />
+        <div id="camera-section">
+          <div class="control-group">
+            <label class="control-label" for="camera-select">Camera Preset</label>
+            <select id="camera-select">
+              <option value="__custom" selected>Custom URL</option>
+            </select>
+          </div>
+
+          <div class="control-group">
+            <label class="control-label" for="stream-url">Stream URL</label>
+            <input id="stream-url" type="text" placeholder="rtsp://username:password@ip:port/path" autocomplete="off" />
+          </div>
+
+          <div class="control-group">
+            <label class="control-label" for="stream-transport">Stream Transport</label>
+            <select id="stream-transport">
+              <option value="mjpeg" selected>HTTP MJPEG</option>
+              <option value="webrtc">WebRTC (Low Latency)</option>
+            </select>
+          </div>
+        </div>
+
+        <div id="upload-section" style="display:none;">
+          <div class="control-group">
+            <label class="control-label" for="video-file-input">MP4 Video <span class="upload-limit-badge">max 200 MB</span></label>
+            <div class="file-drop-zone" id="file-drop-zone">
+              <input type="file" id="video-file-input" accept="video/mp4,.mp4" />
+              <div class="file-drop-content" id="file-drop-content">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="32" height="32"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                <span class="file-drop-label">Click to select or drag &amp; drop</span>
+                <span class="file-drop-hint" id="file-name-display">No file selected</span>
+              </div>
+            </div>
+            <div class="upload-progress-wrap" id="upload-progress-wrap" style="display:none;">
+              <div class="upload-progress-bar-bg">
+                <div class="upload-progress-bar" id="upload-progress-bar"></div>
+              </div>
+              <span class="upload-progress-text" id="upload-progress-text">Uploading… 0%</span>
+            </div>
+          </div>
         </div>
 
         <div class="control-group">
@@ -88,14 +132,6 @@
           <select id="stream-mode">
             <option value="preview">Camera Preview</option>
             <option value="alpr" selected>License Plate Recognition</option>
-          </select>
-        </div>
-
-        <div class="control-group">
-          <label class="control-label" for="stream-transport">Stream Transport</label>
-          <select id="stream-transport">
-            <option value="mjpeg" selected>HTTP MJPEG</option>
-            <option value="webrtc">WebRTC (Low Latency)</option>
           </select>
         </div>
 

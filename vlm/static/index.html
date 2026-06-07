@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>License Plate Reader</title>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <main class="shell">
+    <header class="topbar">
+      <div class="brand-lockup">
+        <img class="brand-logo" src="/assets/tonai_logo.png" alt="TonAI">
+        <div class="brand-title">
+          <p class="eyebrow">Plate Recognition</p>
+          <h1>License Plate Reader</h1>
+        </div>
+      </div>
+      <div class="status-pill" id="status-pill">
+        <span class="status-dot"></span>
+        <span id="status-text">Checking</span>
+      </div>
+    </header>
+
+    <section class="workspace">
+      <div class="preview-panel">
+        <div class="image-stage" id="drop-zone">
+          <img id="preview-image" alt="Selected license plate test image">
+          <div class="empty-state" id="empty-state">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <path d="M17 8 12 3 7 8"/>
+              <path d="M12 3v12"/>
+            </svg>
+            <span>Select image</span>
+          </div>
+          <input id="file-input" type="file" accept="image/*">
+        </div>
+      </div>
+
+      <aside class="control-panel">
+        <div class="field">
+          <label for="sample-select">Sample</label>
+          <select id="sample-select">
+            <option value="">Custom upload</option>
+          </select>
+        </div>
+
+        <button class="primary-button" id="run-button" type="button" disabled>
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M8 5v14l11-7z"/>
+          </svg>
+          <span>Read Plate</span>
+        </button>
+
+        <div class="result-panel">
+          <div class="result-header">
+            <span>Result</span>
+            <span id="elapsed-time"></span>
+          </div>
+          <div class="result-list" id="result-output" aria-live="polite"></div>
+        </div>
+      </aside>
+    </section>
+  </main>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

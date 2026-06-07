@@ -244,8 +244,8 @@ The service is configured using environment variables:
 export ALPR_DEVICE=cuda:0      # Options: auto, cpu, cuda:0, cuda:1, etc.
 
 # Model paths
-export VEHICLE_WEIGHT=weights/vehicle/vehicle_yolo12s_640.pt
-export PLATE_WEIGHT=weights/plate/plate_yolov8n_320_2024.pt
+export VEHICLE_WEIGHT=weights/vehicle/vehicle_detector.pt
+export PLATE_WEIGHT=weights/plate/license_plate_detector.pt
 export DSORT_WEIGHT=weights/tracking/deepsort/ckpt.t7
 
 # Detection thresholds
@@ -437,7 +437,7 @@ Convert trained models to ONNX format for deployment:
 
 ```bash
 python detectors/yolo/exporter.py \
-  --weights weights/plate/plate_yolo11n_640_2025.pt \
+  --weights weights/plate/license_plate_detector.pt \
   --dynamic
 ```
 
@@ -477,20 +477,11 @@ python scripts/generate_model_zoo.py --runs-dir runs/detect --output MODEL_ZOO.m
 ```
 weights/
 ├── vehicle/              # Vehicle detection models
-│   ├── vehicle_yolo12s_640.pt (recommended)
-│   ├── vehicle_yolo11m_640_18sep2025.pt
-│   └── ...
+│   ├── vehicle_detector.pt
+│   └── vehicle_detector.onnx
 ├── plate/                # License plate detection models
-│   ├── plate_yolov8n_320_2024.pt (recommended for speed)
-│   ├── plate_yolo12n_640_2025.pt (recommended for accuracy)
-│   └── ...
-├── pretrained/           # Pre-trained YOLO base models
-│   ├── yolo11m.pt
-│   ├── yolo12s.pt
-│   └── ...
-├── tracking/             # Tracking models
-│   └── deepsort/
-│       └── ckpt.t7
+│   ├── license_plate_detector.pt
+│   └── license_plate_detector.onnx
 └── ocr/                  # OCR models (PaddleOCR)
     └── ppocrv4/
 ```
@@ -513,8 +504,8 @@ Format: `{task}_{architecture}_{resolution}_{date}.{ext}`
 ### Recommended Models
 
 **Production Use:**
-- Vehicle: `vehicle_yolo12s_640.pt` (balanced speed/accuracy)
-- Plate: `plate_yolov8n_320_2024.pt` (speed) or `plate_yolo12n_640_2025.pt` (accuracy)
+- Vehicle: `vehicle_detector.pt`
+- Plate: `license_plate_detector.pt`
 
 ---
 

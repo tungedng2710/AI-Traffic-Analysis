@@ -630,6 +630,157 @@ button:disabled {
   box-shadow: 0 14px 28px rgba(239, 68, 68, 0.3);
 }
 
+/* ── Source toggle ──────────────────────────────────── */
+.source-toggle {
+  display: flex;
+  gap: 0;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.source-btn {
+  flex: 1 1 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 9px 12px;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 0.88rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  box-shadow: none;
+  transform: none !important;
+}
+
+.source-btn:hover {
+  background: var(--surface-muted);
+  color: var(--text);
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+.source-btn.active {
+  background: var(--accent);
+  color: #fff;
+  box-shadow: none !important;
+}
+
+.source-btn.active:hover {
+  background: var(--accent-strong);
+}
+
+/* ── File drop zone ─────────────────────────────────── */
+.upload-limit-badge {
+  display: inline-block;
+  background: var(--surface-muted);
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 0.75rem;
+  padding: 1px 6px;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+
+.file-drop-zone {
+  position: relative;
+  border: 2px dashed var(--border);
+  border-radius: 10px;
+  background: var(--surface-muted);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  overflow: hidden;
+}
+
+.file-drop-zone:hover,
+.file-drop-zone.drag-over {
+  border-color: var(--accent);
+  background: rgba(37, 99, 235, 0.05);
+}
+
+.file-drop-zone.drop-zone-error {
+  border-color: #ef4444;
+  background: rgba(239, 68, 68, 0.05);
+}
+
+.file-drop-zone input[type="file"] {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+  width: 100%;
+  height: 100%;
+  z-index: 2;
+}
+
+.file-drop-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 20px 16px;
+  pointer-events: none;
+  color: var(--text-muted);
+}
+
+.file-drop-content svg {
+  opacity: 0.55;
+}
+
+.file-drop-label {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.file-drop-hint {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  word-break: break-all;
+  text-align: center;
+}
+
+/* ── Upload progress ────────────────────────────────── */
+.upload-progress-wrap {
+  margin-top: 8px;
+}
+
+.upload-progress-bar-bg {
+  height: 6px;
+  background: var(--surface-muted);
+  border-radius: 4px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+
+.upload-progress-bar {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, var(--accent) 0%, #60a5fa 100%);
+  border-radius: 4px;
+  transition: width 0.2s ease;
+}
+
+.upload-progress-text {
+  display: block;
+  margin-top: 4px;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+#camera-section,
+#upload-section {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
 @media (max-width: 1024px) {
   .app-shell {
     padding: 24px;

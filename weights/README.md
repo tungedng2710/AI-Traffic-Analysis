@@ -7,42 +7,11 @@ This directory contains trained model weights for the TrafficCam system.
 ```
 weights/
 ├── vehicle/              # Vehicle detection models
-│   ├── vehicle_yolo11m_640_18sep2025.pt
-│   ├── vehicle_yolo11n_640_18sep2025.pt
-│   ├── vehicle_yolo11s_640.pt
-│   ├── vehicle_yolo11s_640.onnx
-│   ├── vehicle_yolo11s_640_18sep2025.pt
-│   ├── vehicle_yolo11s_640_30oct2025.pt
-│   ├── vehicle_yolo12m_640_18sep2025.pt
-│   ├── vehicle_yolo12s_640.pt
-│   ├── vehicle_yolo12s_640.onnx
-│   ├── vehicle_yolo12s_640_18sep2025.pt
-│   ├── vehicle_yolov8s_640.pt
-│   ├── vehicle_yolov8s_640.onnx
-│   ├── vehicle_yolov8s_640_vehicle-detection-by9xs.pt
-│   ├── vehicle_yolov8s_640_vehicle-detection-by9xs.onnx
-│   ├── vehicle_yolov9c_640_30oct2025.pt
-│   ├── vehicle_yolov9s_640_30oct2025.pt
-│   └── vehicle_yolov9s_640_30oct2025.onnx
+│   ├── vehicle_detector.pt
+│   └── vehicle_detector.onnx
 ├── plate/                # License plate detection models
-│   ├── plate_yolo11n_640_2025.onnx
-│   ├── plate_yolo12n_640_2025.pt
-│   ├── plate_yolov8n_320_2024.pt
-│   ├── plate_yolov8n_320_2024.onnx
-│   ├── plate_yolov9s_640_2025.pt
-│   └── license_plate_detector.pt (legacy)
-├── pretrained/           # Pre-trained YOLO base models
-│   ├── yolo11m.pt
-│   ├── yolo11n.pt
-│   ├── yolo11s.pt
-│   ├── yolo12m.pt
-│   ├── yolo12s.pt
-│   ├── yolov9c.pt
-│   ├── yolov9e.pt
-│   └── yolov9s.pt
-├── tracking/             # Object tracking models
-│   └── deepsort/
-│       └── ckpt.t7
+│   ├── license_plate_detector.pt
+│   └── license_plate_detector.onnx
 └── ocr/                  # OCR (text recognition) models
     └── ppocrv4/
 
@@ -57,14 +26,14 @@ YOLO-based models trained to detect various vehicle types (cars, motorcycles, tr
 - **YOLOv8**: Stable baseline
 - **YOLOv9**: Advanced features
 
-**Recommended for production**: `vehicle_yolo12s_640.pt`
+**Recommended for production**: `vehicle_detector.pt`
 
 ### Plate Detection Models
 Specialized models for detecting license plates in various conditions.
 - **Resolution**: 320x320 for speed, 640x640 for accuracy
 - **Format**: PyTorch (.pt) and ONNX (.onnx) for different deployment scenarios
 
-**Recommended for production**: `plate_yolov8n_320_2024.pt` (speed) or `plate_yolo12n_640_2025.pt` (accuracy)
+**Recommended for production**: `license_plate_detector.pt`
 
 ### Pre-trained Models
 Base YOLO models from Ultralytics, used as starting points for fine-tuning.
@@ -81,8 +50,8 @@ Models are loaded in the main application through command-line arguments:
 
 ```bash
 python main.py \
-  --vehicle_weight weights/vehicle/vehicle_yolo12s_640.pt \
-  --plate_weight weights/plate/plate_yolov8n_320_2024.pt \
+  --vehicle_weight weights/vehicle/vehicle_detector.pt \
+  --plate_weight weights/plate/license_plate_detector.pt \
   --dsort_weight weights/tracking/deepsort/ckpt.t7 \
   --ocr_weight weights/ocr/ppocrv4/
 ```

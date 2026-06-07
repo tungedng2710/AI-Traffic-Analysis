@@ -142,3 +142,14 @@ runs
 lib_pponnxcr
 test*
 webapp/rtsp_url.json
+
+# Keep only canonical detector exports in Git.
+weights/**
+!weights/
+!weights/README.md
+!weights/plate/
+!weights/vehicle/
+!weights/plate/license_plate_detector.pt
+!weights/plate/license_plate_detector.onnx
+!weights/vehicle/vehicle_detector.pt
+!weights/vehicle/vehicle_detector.onnx
