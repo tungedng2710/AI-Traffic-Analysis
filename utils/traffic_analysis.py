@@ -312,6 +312,15 @@ class TrafficAnalysisService:
                     if conf > v.ocr_conf:
                         v.plate_number = text
                         v.ocr_conf = conf
+                    if v.ocr_conf > self.ocr_thres and len(v.plate_number) > 5 and check_legit_plate(v.plate_number):
+                        box = v.bbox_xyxy.astype(int)
+                        draw_text(
+                            img=displayed_frame,
+                            text=v.plate_number,
+                            pos=(box[0], box[1] + 26),
+                            text_color=self.color["blue"],
+                            text_color_bg=self.color["green"],
+                        )
 
         # FPS overlay
         dt = gettime() - t0

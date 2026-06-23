@@ -401,7 +401,12 @@ def stream_uploaded_video(
 async def alpr(file: UploadFile = File(...)):
     data = await file.read()
     img = cv2.imdecode(np.frombuffer(data, np.uint8), cv2.IMREAD_COLOR)
-    result = traffic_service.process_image(img)
+    if img is None:
+        raise HTTPException(status_code=400, detail="Invalid image file")
+    with ALPR_PROCESS_LOCK:
+        traffic_service.read_plate = True
+        setattr(traffic_service.opts, "read_plate", True)
+        result = traffic_service.process_image(img)
     _, buffer = cv2.imencode('.jpg', result)
     return Response(content=buffer.tobytes(), media_type="image/jpeg")
 
