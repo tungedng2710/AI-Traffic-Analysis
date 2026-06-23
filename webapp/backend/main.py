@@ -19,7 +19,6 @@ from typing import List
 import av
 from aiortc import RTCPeerConnection, RTCSessionDescription, VideoStreamTrack
 from aiortc.mediastreams import MediaStreamError
-from webapp.backend.dashboard_api import router as dashboard_router
 
 DEFAULT_DEVICE = os.environ.get("ALPR_DEVICE", "auto")
 
@@ -31,9 +30,6 @@ uploaded_videos: Dict[str, Path] = {}
 uploaded_videos_lock = Lock()
 
 app = FastAPI()
-
-# Include dashboard router
-app.include_router(dashboard_router)
 
 # Allow cross-origin usage of the API (useful when serving frontend elsewhere)
 app.add_middleware(

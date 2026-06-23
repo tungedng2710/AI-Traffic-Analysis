@@ -148,26 +148,6 @@ body::after {
   justify-content: flex-end;
 }
 
-.dashboard-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 9px 14px;
-  background: linear-gradient(135deg, #0ea5e9 0%, #2563eb 100%);
-  color: white;
-  text-decoration: none;
-  border-radius: 999px;
-  font-size: 0.85rem;
-  font-weight: 600;
-  transition: all 0.3s ease;
-  box-shadow: 0 14px 28px rgba(14, 165, 233, 0.22);
-}
-
-.dashboard-link:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
-}
-
 .status-badge {
   display: inline-flex;
   align-items: center;
