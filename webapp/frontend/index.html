@@ -63,6 +63,14 @@
         </div>
 
         <div class="control-group">
+          <label class="control-label">Analysis Mode</label>
+          <div class="mode-tabs">
+            <button class="mode-tab active" id="traffic-mode-tab" data-analysis-mode="traffic">Traffic Mode</button>
+            <button class="mode-tab" id="parking-mode-tab" data-analysis-mode="parking">Parking Mode</button>
+          </div>
+        </div>
+
+        <div class="control-group">
           <label class="control-label">Source</label>
           <div class="source-toggle">
             <button class="source-btn active" id="source-camera" data-source="camera">
@@ -89,7 +97,7 @@
             <input id="stream-url" type="text" placeholder="rtsp://username:password@ip:port/path" autocomplete="off" />
           </div>
 
-          <div class="control-group">
+          <div class="control-group advanced-traffic-config">
             <label class="control-label" for="stream-transport">Stream Transport</label>
             <select id="stream-transport">
               <option value="mjpeg" selected>HTTP MJPEG</option>
@@ -118,7 +126,7 @@
           </div>
         </div>
 
-        <div class="control-group">
+        <div class="control-group traffic-only advanced-traffic-config">
           <label class="control-label" for="stream-mode">Stream Mode</label>
           <select id="stream-mode">
             <option value="preview">Camera Preview</option>
@@ -126,14 +134,14 @@
           </select>
         </div>
 
-        <div class="control-group">
+        <div class="control-group traffic-only advanced-traffic-config">
           <label class="control-label" for="vehicle-model">Vehicle Detector</label>
           <select id="vehicle-model">
             <option value="" disabled selected>Loading models...</option>
           </select>
         </div>
 
-        <div class="control-group alpr-only">
+        <div class="control-group alpr-only traffic-only">
           <label class="control-label" for="vconf">Vehicle confidence <span class="value-label" id="vconf-val">0.60</span></label>
           <input type="range" id="vconf" min="0" max="1" step="0.01" value="0.60" />
         </div>
@@ -143,7 +151,7 @@
           <input type="range" id="pconf" min="0" max="1" step="0.01" value="0.25" />
         </div>
 
-        <div class="control-toggle alpr-only">
+        <div class="control-toggle alpr-only traffic-only">
           <label class="toggle-label" for="read-plate">
             <input type="checkbox" id="read-plate" checked />
             <span class="toggle-slider"></span>

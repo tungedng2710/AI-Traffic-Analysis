@@ -652,7 +652,8 @@ button:disabled {
   box-shadow: 0 14px 28px rgba(239, 68, 68, 0.3);
 }
 
-/* ── Source toggle ──────────────────────────────────── */
+/* ── Mode and source toggles ─────────────────────────── */
+.mode-tabs,
 .source-toggle {
   display: flex;
   gap: 0;
@@ -662,6 +663,7 @@ button:disabled {
   background: rgba(2, 6, 23, 0.28);
 }
 
+.mode-tab,
 .source-btn {
   flex: 1 1 0;
   display: inline-flex;
@@ -681,6 +683,7 @@ button:disabled {
   transform: none !important;
 }
 
+.mode-tab:hover,
 .source-btn:hover {
   background: var(--surface-muted);
   color: var(--text);
@@ -688,14 +691,24 @@ button:disabled {
   box-shadow: none !important;
 }
 
+.mode-tab.active,
 .source-btn.active {
   background: linear-gradient(135deg, #0ea5e9 0%, #2563eb 100%);
   color: #fff;
   box-shadow: none !important;
 }
 
+.mode-tab.active:hover,
 .source-btn.active:hover {
   background: var(--accent-strong);
+}
+
+.control-panel.parking-mode .traffic-only {
+  display: none;
+}
+
+.control-panel.traffic-live-mode .advanced-traffic-config {
+  display: none;
 }
 
 /* ── File drop zone ─────────────────────────────────── */

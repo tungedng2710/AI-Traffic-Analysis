@@ -23,6 +23,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const fpsText = document.getElementById('fps-text');
   const streamInfo = document.getElementById('stream-info');
   const refreshCamerasBtn = document.getElementById('refresh-cameras');
+  const trafficModeTab = document.getElementById('traffic-mode-tab');
+  const parkingModeTab = document.getElementById('parking-mode-tab');
 
   // Upload / source toggle elements
   const sourceCameraBtn = document.getElementById('source-camera');
@@ -70,6 +72,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let reconnectAttempts = 0;
   const MAX_RECONNECT_ATTEMPTS = 3;
   let currentSourceType = 'camera'; // 'camera' | 'upload'
+  let currentAnalysisMode = 'traffic'; // 'traffic' | 'parking'
   let pendingUploadXhr = null;
 
   function updateConnectionStatus(status, text) {
@@ -141,13 +144,20 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function getSelectedMode() {
+    if (currentAnalysisMode === 'parking') {
+      return 'parking';
+    }
     return modeSelect.value || 'alpr';
   }
 
   function applyModeState() {
     const preview = getSelectedMode() === 'preview';
+    const parking = currentAnalysisMode === 'parking';
+    const trafficLive = currentAnalysisMode === 'traffic' && currentSourceType === 'camera';
     if (controlPanel) {
       controlPanel.classList.toggle('preview-mode', preview);
+      controlPanel.classList.toggle('parking-mode', parking);
+      controlPanel.classList.toggle('traffic-live-mode', trafficLive);
     }
     if (vconf) {
       vconf.disabled = preview;
@@ -158,6 +168,20 @@ document.addEventListener('DOMContentLoaded', () => {
     if (readPlateToggle) {
       readPlateToggle.disabled = preview;
     }
+  }
+
+  function switchAnalysisMode(mode) {
+    currentAnalysisMode = mode;
+    if (trafficModeTab) trafficModeTab.classList.toggle('active', mode === 'traffic');
+    if (parkingModeTab) parkingModeTab.classList.toggle('active', mode === 'parking');
+    if (mode === 'parking') {
+      modeSelect.value = 'alpr';
+    }
+    applyModeState();
+    const message = mode === 'parking'
+      ? 'Parking mode: Detect plates and OCR text only.'
+      : 'Traffic mode: Vehicle detection, tracking, and plate recognition.';
+    stopStream(message);
   }
 
   function hideAllStreams() {
@@ -424,8 +448,10 @@ document.addEventListener('DOMContentLoaded', () => {
   function processImageFile(file, onProgress) {
     return new Promise((resolve, reject) => {
       const xhr = new XMLHttpRequest();
+      const endpointPath = currentAnalysisMode === 'parking' ? '/api/alpr?mode=parking' : '/api/alpr';
+      const endpoint = new URL(endpointPath, window.location.origin).toString();
       pendingUploadXhr = xhr;
-      xhr.open('POST', '/api/alpr');
+      xhr.open('POST', endpoint);
       xhr.responseType = 'blob';
       xhr.upload.addEventListener('progress', (e) => {
         if (e.lengthComputable) onProgress(e.loaded / e.total);
@@ -435,7 +461,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (xhr.status >= 200 && xhr.status < 300) {
           resolve(xhr.response);
         } else {
-          let msg = `Processing failed (${xhr.status})`;
+          let msg = `Processing failed at ${endpoint} (${xhr.status})`;
           reject(new Error(msg));
         }
       });
@@ -443,6 +469,9 @@ document.addEventListener('DOMContentLoaded', () => {
       xhr.addEventListener('abort', () => { pendingUploadXhr = null; reject(new Error('Processing cancelled')); });
       const formData = new FormData();
       formData.append('file', file);
+      if (currentAnalysisMode === 'parking') {
+        formData.append('mode', 'parking');
+      }
       xhr.send(formData);
     });
   }
@@ -584,7 +613,11 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!preview && typeof config.readPlate !== 'undefined') {
       params.set('read_plate', String(config.readPlate));
     }
-    const endpoint = preview ? '/api/video' : '/api/alpr_stream';
+    const endpoint = preview
+      ? '/api/video'
+      : config.mode === 'parking'
+        ? '/api/parking_stream'
+        : '/api/alpr_stream';
     const src = `${endpoint}?${params.toString()}`;
     paused = false;
     pauseBtn.querySelector('span').textContent = 'Pause';
@@ -834,6 +867,18 @@ document.addEventListener('DOMContentLoaded', () => {
   if (refreshCamerasBtn) {
     refreshCamerasBtn.addEventListener('click', () => {
       loadCameraPresets();
+    });
+  }
+
+  if (trafficModeTab) {
+    trafficModeTab.addEventListener('click', () => {
+      if (currentAnalysisMode !== 'traffic') switchAnalysisMode('traffic');
+    });
+  }
+
+  if (parkingModeTab) {
+    parkingModeTab.addEventListener('click', () => {
+      if (currentAnalysisMode !== 'parking') switchAnalysisMode('parking');
     });
   }
 
