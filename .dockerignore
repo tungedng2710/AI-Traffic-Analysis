@@ -30,6 +30,7 @@ data/samples/raw/
 
 # Keep configuration files
 !data/config/
+!data/assets
 
 # Model weights - mount as volumes
 # Note: Mount weights directory as volume in docker-compose

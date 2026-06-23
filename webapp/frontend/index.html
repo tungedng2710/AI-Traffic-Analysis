@@ -12,20 +12,11 @@
       <div class="app-brand">
         <img src="static/logo_notext.png" alt="TonAI Logo" class="brand-logo" />
         <div>
-          <h1>TonAI AI Traffic Camera</h1>
+          <h1>TonAI AI Traffic Analysis</h1>
           <p class="tagline">Real-time License Plate Recognition System</p>
         </div>
       </div>
       <div class="status-badges">
-        <a href="dashboard.html" class="dashboard-link" title="Open Dashboard">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <rect x="3" y="3" width="7" height="7"/>
-            <rect x="14" y="3" width="7" height="7"/>
-            <rect x="14" y="14" width="7" height="7"/>
-            <rect x="3" y="14" width="7" height="7"/>
-          </svg>
-          Dashboard
-        </a>
         <div class="status-badge" id="connection-badge">
           <span class="status-dot"></span>
           <span class="status-text">Disconnected</span>
@@ -72,6 +63,14 @@
         </div>
 
         <div class="control-group">
+          <label class="control-label">Analysis Mode</label>
+          <div class="mode-tabs">
+            <button class="mode-tab active" id="traffic-mode-tab" data-analysis-mode="traffic">Traffic Mode</button>
+            <button class="mode-tab" id="parking-mode-tab" data-analysis-mode="parking">Parking Mode</button>
+          </div>
+        </div>
+
+        <div class="control-group">
           <label class="control-label">Source</label>
           <div class="source-toggle">
             <button class="source-btn active" id="source-camera" data-source="camera">
@@ -80,7 +79,7 @@
             </button>
             <button class="source-btn" id="source-upload" data-source="upload">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-              Video File
+              Image Upload
             </button>
           </div>
         </div>
@@ -98,7 +97,7 @@
             <input id="stream-url" type="text" placeholder="rtsp://username:password@ip:port/path" autocomplete="off" />
           </div>
 
-          <div class="control-group">
+          <div class="control-group advanced-traffic-config">
             <label class="control-label" for="stream-transport">Stream Transport</label>
             <select id="stream-transport">
               <option value="mjpeg" selected>HTTP MJPEG</option>
@@ -109,9 +108,9 @@
 
         <div id="upload-section" style="display:none;">
           <div class="control-group">
-            <label class="control-label" for="video-file-input">MP4 Video <span class="upload-limit-badge">max 200 MB</span></label>
+            <label class="control-label" for="image-file-input">Image <span class="upload-limit-badge">JPG, PNG, WEBP</span></label>
             <div class="file-drop-zone" id="file-drop-zone">
-              <input type="file" id="video-file-input" accept="video/mp4,.mp4" />
+              <input type="file" id="image-file-input" accept="image/*,.jpg,.jpeg,.png,.webp" />
               <div class="file-drop-content" id="file-drop-content">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="32" height="32"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
                 <span class="file-drop-label">Click to select or drag &amp; drop</span>
@@ -122,12 +121,12 @@
               <div class="upload-progress-bar-bg">
                 <div class="upload-progress-bar" id="upload-progress-bar"></div>
               </div>
-              <span class="upload-progress-text" id="upload-progress-text">Uploading… 0%</span>
+              <span class="upload-progress-text" id="upload-progress-text">Processing... 0%</span>
             </div>
           </div>
         </div>
 
-        <div class="control-group">
+        <div class="control-group traffic-only advanced-traffic-config">
           <label class="control-label" for="stream-mode">Stream Mode</label>
           <select id="stream-mode">
             <option value="preview">Camera Preview</option>
@@ -135,14 +134,14 @@
           </select>
         </div>
 
-        <div class="control-group">
+        <div class="control-group traffic-only advanced-traffic-config">
           <label class="control-label" for="vehicle-model">Vehicle Detector</label>
           <select id="vehicle-model">
             <option value="" disabled selected>Loading models...</option>
           </select>
         </div>
 
-        <div class="control-group alpr-only">
+        <div class="control-group alpr-only traffic-only">
           <label class="control-label" for="vconf">Vehicle confidence <span class="value-label" id="vconf-val">0.60</span></label>
           <input type="range" id="vconf" min="0" max="1" step="0.01" value="0.60" />
         </div>
@@ -152,7 +151,7 @@
           <input type="range" id="pconf" min="0" max="1" step="0.01" value="0.25" />
         </div>
 
-        <div class="control-toggle alpr-only">
+        <div class="control-toggle alpr-only traffic-only">
           <label class="toggle-label" for="read-plate">
             <input type="checkbox" id="read-plate" checked />
             <span class="toggle-slider"></span>

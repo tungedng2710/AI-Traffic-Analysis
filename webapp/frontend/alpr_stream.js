@@ -23,13 +23,15 @@ document.addEventListener('DOMContentLoaded', () => {
   const fpsText = document.getElementById('fps-text');
   const streamInfo = document.getElementById('stream-info');
   const refreshCamerasBtn = document.getElementById('refresh-cameras');
+  const trafficModeTab = document.getElementById('traffic-mode-tab');
+  const parkingModeTab = document.getElementById('parking-mode-tab');
 
   // Upload / source toggle elements
   const sourceCameraBtn = document.getElementById('source-camera');
   const sourceUploadBtn = document.getElementById('source-upload');
   const cameraSection = document.getElementById('camera-section');
   const uploadSection = document.getElementById('upload-section');
-  const videoFileInput = document.getElementById('video-file-input');
+  const imageFileInput = document.getElementById('image-file-input');
   const fileDropZone = document.getElementById('file-drop-zone');
   const fileNameDisplay = document.getElementById('file-name-display');
   const uploadProgressWrap = document.getElementById('upload-progress-wrap');
@@ -70,6 +72,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let reconnectAttempts = 0;
   const MAX_RECONNECT_ATTEMPTS = 3;
   let currentSourceType = 'camera'; // 'camera' | 'upload'
+  let currentAnalysisMode = 'traffic'; // 'traffic' | 'parking'
   let pendingUploadXhr = null;
 
   function updateConnectionStatus(status, text) {
@@ -141,13 +144,20 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function getSelectedMode() {
+    if (currentAnalysisMode === 'parking') {
+      return 'parking';
+    }
     return modeSelect.value || 'alpr';
   }
 
   function applyModeState() {
     const preview = getSelectedMode() === 'preview';
+    const parking = currentAnalysisMode === 'parking';
+    const trafficLive = currentAnalysisMode === 'traffic' && currentSourceType === 'camera';
     if (controlPanel) {
       controlPanel.classList.toggle('preview-mode', preview);
+      controlPanel.classList.toggle('parking-mode', parking);
+      controlPanel.classList.toggle('traffic-live-mode', trafficLive);
     }
     if (vconf) {
       vconf.disabled = preview;
@@ -158,6 +168,20 @@ document.addEventListener('DOMContentLoaded', () => {
     if (readPlateToggle) {
       readPlateToggle.disabled = preview;
     }
+  }
+
+  function switchAnalysisMode(mode) {
+    currentAnalysisMode = mode;
+    if (trafficModeTab) trafficModeTab.classList.toggle('active', mode === 'traffic');
+    if (parkingModeTab) parkingModeTab.classList.toggle('active', mode === 'parking');
+    if (mode === 'parking') {
+      modeSelect.value = 'alpr';
+    }
+    applyModeState();
+    const message = mode === 'parking'
+      ? 'Parking mode: Detect plates and OCR text only.'
+      : 'Traffic mode: Vehicle detection, tracking, and plate recognition.';
+    stopStream(message);
   }
 
   function hideAllStreams() {
@@ -212,6 +236,9 @@ document.addEventListener('DOMContentLoaded', () => {
     showLoading(false);
     streamStartTime = null;
     reconnectAttempts = 0;
+    if (streamImg) {
+      streamImg.classList.remove('single-image-result');
+    }
   }
 
   function showPlaceholder(message) {
@@ -229,6 +256,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function showMjpegStream(src) {
     currentTransport = TRANSPORT_MJPEG;
     currentSrc = src;
+    streamImg.classList.remove('single-image-result');
     streamImg.src = src;
     streamImg.classList.add('fade-in');
     streamImg.style.display = 'block';
@@ -381,14 +409,20 @@ document.addEventListener('DOMContentLoaded', () => {
     if (type === 'upload') {
       if (cameraSection) cameraSection.style.display = 'none';
       if (uploadSection) uploadSection.style.display = 'block';
+      if (transportSelect) transportSelect.disabled = true;
+      if (pauseBtn) pauseBtn.disabled = true;
       if (sourceCameraBtn) sourceCameraBtn.classList.remove('active');
       if (sourceUploadBtn) sourceUploadBtn.classList.add('active');
+      modeSelect.value = 'alpr';
     } else {
       if (cameraSection) cameraSection.style.display = 'block';
       if (uploadSection) uploadSection.style.display = 'none';
+      if (transportSelect) transportSelect.disabled = false;
+      if (pauseBtn) pauseBtn.disabled = false;
       if (sourceCameraBtn) sourceCameraBtn.classList.add('active');
       if (sourceUploadBtn) sourceUploadBtn.classList.remove('active');
     }
+    applyModeState();
     stopStream('Configure your source and click Start.');
   }
 
@@ -399,7 +433,7 @@ document.addEventListener('DOMContentLoaded', () => {
       uploadProgressBar.style.width = `${Math.round(ratio * 100)}%`;
     }
     if (uploadProgressText) {
-      uploadProgressText.textContent = label || `Uploading… ${Math.round(ratio * 100)}%`;
+      uploadProgressText.textContent = label || `Processing... ${Math.round(ratio * 100)}%`;
     }
   }
 
@@ -411,87 +445,99 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  function uploadVideoFile(file, onProgress) {
+  function processImageFile(file, onProgress) {
     return new Promise((resolve, reject) => {
       const xhr = new XMLHttpRequest();
+      const endpointPath = currentAnalysisMode === 'parking' ? '/api/alpr?mode=parking' : '/api/alpr';
+      const endpoint = new URL(endpointPath, window.location.origin).toString();
       pendingUploadXhr = xhr;
-      xhr.open('POST', '/api/upload_video');
+      xhr.open('POST', endpoint);
+      xhr.responseType = 'blob';
       xhr.upload.addEventListener('progress', (e) => {
         if (e.lengthComputable) onProgress(e.loaded / e.total);
       });
       xhr.addEventListener('load', () => {
         pendingUploadXhr = null;
         if (xhr.status >= 200 && xhr.status < 300) {
-          try {
-            resolve(JSON.parse(xhr.responseText));
-          } catch {
-            reject(new Error('Invalid server response'));
-          }
+          resolve(xhr.response);
         } else {
-          let msg = `Upload failed (${xhr.status})`;
-          try {
-            const body = JSON.parse(xhr.responseText);
-            if (body && body.detail) msg = body.detail;
-          } catch { /* ignore */ }
+          let msg = `Processing failed at ${endpoint} (${xhr.status})`;
           reject(new Error(msg));
         }
       });
-      xhr.addEventListener('error', () => { pendingUploadXhr = null; reject(new Error('Network error during upload')); });
-      xhr.addEventListener('abort', () => { pendingUploadXhr = null; reject(new Error('Upload cancelled')); });
+      xhr.addEventListener('error', () => { pendingUploadXhr = null; reject(new Error('Network error during processing')); });
+      xhr.addEventListener('abort', () => { pendingUploadXhr = null; reject(new Error('Processing cancelled')); });
       const formData = new FormData();
       formData.append('file', file);
+      if (currentAnalysisMode === 'parking') {
+        formData.append('mode', 'parking');
+      }
       xhr.send(formData);
     });
   }
 
-  function startUploadMjpegStream(videoId, config) {
+  function showProcessedImage(blob) {
     teardownWebRTC();
-    const params = new URLSearchParams();
-    if (typeof config.vconf !== 'undefined') params.set('vconf', String(config.vconf));
-    if (typeof config.pconf !== 'undefined') params.set('pconf', String(config.pconf));
-    if (typeof config.readPlate !== 'undefined') params.set('read_plate', String(config.readPlate));
-    const query = params.toString();
-    const src = `/api/alpr_stream/upload/${videoId}${query ? '?' + query : ''}`;
+    hideAllStreams();
+    if (currentSrc && currentSrc.startsWith('blob:')) {
+      URL.revokeObjectURL(currentSrc);
+    }
+    const src = URL.createObjectURL(blob);
+    currentTransport = TRANSPORT_MJPEG;
+    currentSrc = src;
+    streamImg.src = src;
+    streamImg.classList.add('fade-in', 'single-image-result');
+    streamImg.style.display = 'block';
+    if (placeholder) placeholder.style.display = 'none';
+    if (streamInfo) streamInfo.style.display = 'flex';
+    const resolutionEl = document.getElementById('stream-resolution');
+    if (resolutionEl) resolutionEl.textContent = 'Processed image';
     paused = false;
     pauseBtn.querySelector('span').textContent = 'Pause';
-    showMjpegStream(src);
+    showLoading(false);
+    updateConnectionStatus('connected', 'Processed');
   }
 
   async function startUploadStream(config) {
-    const file = videoFileInput ? videoFileInput.files[0] : null;
+    const file = imageFileInput ? imageFileInput.files[0] : null;
     if (!file) {
       if (fileDropZone) fileDropZone.classList.add('drop-zone-error');
-      showPlaceholder('Please select an MP4 video file first.');
+      showPlaceholder('Please select an image file first.');
       return;
     }
     if (fileDropZone) fileDropZone.classList.remove('drop-zone-error');
 
-    const MAX_SIZE = 200 * 1024 * 1024;
+    if (!file.type.startsWith('image/')) {
+      showPlaceholder('Please choose a JPG, PNG, or WEBP image.');
+      return;
+    }
+
+    const MAX_SIZE = 20 * 1024 * 1024;
     if (file.size > MAX_SIZE) {
-      showPlaceholder('File exceeds the 200 MB limit. Please choose a smaller video.');
+      showPlaceholder('Image exceeds the 20 MB limit. Please choose a smaller file.');
       return;
     }
 
     showLoading(true);
-    updateConnectionStatus('connecting', 'Uploading…');
-    setUploadProgress(0, 'Uploading… 0%');
+    updateConnectionStatus('connecting', 'Processing...');
+    setUploadProgress(0, 'Uploading... 0%');
 
-    let payload;
+    let resultBlob;
     try {
-      payload = await uploadVideoFile(file, (ratio) => {
-        setUploadProgress(ratio, `Uploading… ${Math.round(ratio * 100)}%`);
+      resultBlob = await processImageFile(file, (ratio) => {
+        setUploadProgress(ratio, `Uploading... ${Math.round(ratio * 100)}%`);
       });
     } catch (err) {
       hideUploadProgress();
       showLoading(false);
-      showPlaceholder(`Upload failed: ${err.message}`);
-      updateConnectionStatus('error', 'Upload Failed');
+      showPlaceholder(`Image processing failed: ${err.message}`);
+      updateConnectionStatus('error', 'Processing Failed');
       return;
     }
 
-    setUploadProgress(1, 'Processing…');
-    lastStartConfig = { ...config, sourceType: 'upload', videoId: payload.video_id };
-    startUploadMjpegStream(payload.video_id, config);
+    setUploadProgress(1, 'Processing complete');
+    lastStartConfig = { ...config, sourceType: 'upload' };
+    showProcessedImage(resultBlob);
     hideUploadProgress();
   }
 
@@ -508,9 +554,9 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // File input interactions
-  if (videoFileInput) {
-    videoFileInput.addEventListener('change', () => {
-      const file = videoFileInput.files[0];
+  if (imageFileInput) {
+    imageFileInput.addEventListener('change', () => {
+      const file = imageFileInput.files[0];
       if (fileDropZone) fileDropZone.classList.remove('drop-zone-error');
       if (fileNameDisplay) {
         fileNameDisplay.textContent = file ? file.name : 'No file selected';
@@ -531,10 +577,10 @@ document.addEventListener('DOMContentLoaded', () => {
       e.preventDefault();
       fileDropZone.classList.remove('drag-over');
       const file = e.dataTransfer && e.dataTransfer.files[0];
-      if (file && videoFileInput) {
+      if (file && imageFileInput) {
         const dt = new DataTransfer();
         dt.items.add(file);
-        videoFileInput.files = dt.files;
+        imageFileInput.files = dt.files;
         if (fileNameDisplay) fileNameDisplay.textContent = file.name;
         fileDropZone.classList.remove('drop-zone-error');
         hideUploadProgress();
@@ -567,7 +613,11 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!preview && typeof config.readPlate !== 'undefined') {
       params.set('read_plate', String(config.readPlate));
     }
-    const endpoint = preview ? '/api/video' : '/api/alpr_stream';
+    const endpoint = preview
+      ? '/api/video'
+      : config.mode === 'parking'
+        ? '/api/parking_stream'
+        : '/api/alpr_stream';
     const src = `${endpoint}?${params.toString()}`;
     paused = false;
     pauseBtn.querySelector('span').textContent = 'Pause';
@@ -820,6 +870,18 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  if (trafficModeTab) {
+    trafficModeTab.addEventListener('click', () => {
+      if (currentAnalysisMode !== 'traffic') switchAnalysisMode('traffic');
+    });
+  }
+
+  if (parkingModeTab) {
+    parkingModeTab.addEventListener('click', () => {
+      if (currentAnalysisMode !== 'parking') switchAnalysisMode('parking');
+    });
+  }
+
   startBtn.addEventListener('click', async () => {
     if (currentSourceType === 'upload') {
       startBtn.disabled = true;
@@ -901,7 +963,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const preview = getSelectedMode() === 'preview';
     const message = preview
       ? 'Camera preview stopped. Click Start to view the camera feed.'
-      : 'Stream stopped. Configure your camera and click Start.';
+      : currentSourceType === 'upload'
+        ? 'Image result cleared. Select an image and click Start.'
+        : 'Stream stopped. Configure your camera and click Start.';
     stopStream(message);
   });
 
