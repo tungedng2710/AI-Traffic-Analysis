@@ -1,4 +1,4 @@
-FROM paddlepaddle/paddle:3.2.0-gpu-cuda12.6-cudnn9.5
+FROM paddlepaddle/paddle:3.3.1-gpu-cuda12.9-cudnn9.9
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \

@@ -153,3 +153,4 @@ weights/**
 !weights/plate/license_plate_detector.onnx
 !weights/vehicle/vehicle_detector.pt
 !weights/vehicle/vehicle_detector.onnx
+!data/assets

@@ -26,18 +26,21 @@
 }
 
 :root {
-  color-scheme: light;
-  --surface: rgba(255, 255, 255, 0.78);
-  --surface-strong: rgba(255, 255, 255, 0.92);
-  --surface-muted: #eef3ff;
-  --text: #0f172a;
-  --text-muted: #475569;
-  --accent: #2563eb;
-  --accent-strong: #1d4ed8;
-  --border: #d4dbe5;
-  --glass-border: rgba(255, 255, 255, 0.45);
-  --glass-highlight: rgba(255, 255, 255, 0.65);
-  --shadow: 0 18px 40px rgba(15, 23, 42, 0.12);
+  color-scheme: dark;
+  --page-bg: #07111f;
+  --surface: rgba(15, 23, 42, 0.88);
+  --surface-strong: rgba(22, 33, 52, 0.96);
+  --surface-muted: rgba(30, 41, 59, 0.82);
+  --text: #e5edf8;
+  --text-muted: #94a3b8;
+  --accent: #38bdf8;
+  --accent-strong: #0ea5e9;
+  --border: rgba(148, 163, 184, 0.2);
+  --glass-border: rgba(148, 163, 184, 0.18);
+  --glass-highlight: rgba(255, 255, 255, 0.08);
+  --shadow: 0 24px 70px rgba(0, 0, 0, 0.32);
+  --radius-lg: 24px;
+  --radius-md: 14px;
   font-family: 'Coves', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
 }
 
@@ -48,7 +51,10 @@
 body {
   margin: 0;
   min-height: 100vh;
-  background: radial-gradient(120% 120% at 15% 10%, rgba(255, 255, 255, 0.9) 0%, #e0eaff 42%, #eff5ff 100%);
+  background:
+    radial-gradient(circle at 14% 12%, rgba(56, 189, 248, 0.18), transparent 28%),
+    radial-gradient(circle at 88% 6%, rgba(59, 130, 246, 0.2), transparent 32%),
+    linear-gradient(135deg, #07111f 0%, #0f172a 48%, #111827 100%);
   color: var(--text);
   font-family: inherit;
   position: relative;
@@ -61,7 +67,7 @@ body::after {
   position: fixed;
   width: 420px;
   height: 420px;
-  background: radial-gradient(circle, rgba(255, 255, 255, 0.75) 0%, rgba(255, 255, 255, 0) 70%);
+  background: radial-gradient(circle, rgba(56, 189, 248, 0.2) 0%, rgba(56, 189, 248, 0) 70%);
   pointer-events: none;
   z-index: 0;
   filter: blur(0.5px);
@@ -79,7 +85,7 @@ body::after {
 }
 
 .app-shell {
-  padding: 32px;
+  padding: 28px;
   display: flex;
   flex-direction: column;
   gap: 24px;
@@ -91,9 +97,17 @@ body::after {
 
 .app-header {
   display: flex;
-  flex-direction: column;
-  gap: 12px;
-  padding: 12px 0 8px;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  padding: 18px 20px;
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.78), rgba(15, 23, 42, 0.52));
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
 }
 
 .app-brand {
@@ -103,14 +117,19 @@ body::after {
 }
 
 .brand-logo {
-  width: 60px;
-  height: 60px;
+  width: 54px;
+  height: 54px;
   object-fit: contain;
+  padding: 8px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--border);
+  border-radius: 16px;
 }
 
 .app-brand h1 {
   margin: 0;
-  font-size: 1.9rem;
+  font-size: clamp(1.55rem, 2.3vw, 2.15rem);
+  letter-spacing: -0.03em;
 }
 
 .tagline {
@@ -124,22 +143,24 @@ body::after {
   display: flex;
   gap: 12px;
   align-items: center;
-  margin-top: 12px;
+  margin-top: 0;
+  flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
 .dashboard-link {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 6px 12px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 9px 14px;
+  background: linear-gradient(135deg, #0ea5e9 0%, #2563eb 100%);
   color: white;
   text-decoration: none;
-  border-radius: 20px;
+  border-radius: 999px;
   font-size: 0.85rem;
   font-weight: 600;
   transition: all 0.3s ease;
-  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 14px 28px rgba(14, 165, 233, 0.22);
 }
 
 .dashboard-link:hover {
@@ -151,10 +172,10 @@ body::after {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 6px 12px;
+  padding: 9px 13px;
   background: var(--surface);
   border: 1px solid var(--glass-border);
-  border-radius: 20px;
+  border-radius: 999px;
   font-size: 0.85rem;
   font-weight: 500;
   backdrop-filter: blur(12px);
@@ -200,7 +221,7 @@ body::after {
 
 .app-main {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 320px;
+  grid-template-columns: minmax(0, 1fr) minmax(330px, 380px);
   gap: 24px;
   align-items: start;
 }
@@ -208,9 +229,9 @@ body::after {
 .stream-panel {
   position: relative;
   background: var(--surface);
-  border-radius: 18px;
+  border-radius: var(--radius-lg);
   padding: 16px;
-  min-height: 600px;
+  min-height: 640px;
   box-shadow: var(--shadow);
   display: flex;
   align-items: stretch;
@@ -219,6 +240,14 @@ body::after {
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
   overflow: hidden;
+}
+
+.stream-panel::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(56, 189, 248, 0.12), transparent 34%, rgba(37, 99, 235, 0.08));
+  pointer-events: none;
 }
 
 .stream-info {
@@ -231,7 +260,7 @@ body::after {
 }
 
 .stream-info span {
-  background: rgba(15, 23, 42, 0.85);
+  background: rgba(2, 6, 23, 0.82);
   color: white;
   padding: 6px 12px;
   border-radius: 8px;
@@ -244,12 +273,18 @@ body::after {
 .stream-view {
   width: 100%;
   max-height: 80vh;
-  border-radius: 12px;
+  border-radius: 18px;
   border: 1px solid var(--border);
-  background: #0f172a;
+  background: #020617;
   object-fit: contain;
   display: none;
   transition: opacity 0.3s ease;
+  position: relative;
+  z-index: 1;
+}
+
+.stream-view.single-image-result {
+  object-fit: contain;
 }
 
 .stream-view.fade-in {
@@ -264,9 +299,9 @@ body::after {
 .stream-placeholder {
   position: absolute;
   inset: 16px;
-  border-radius: 12px;
+  border-radius: 18px;
   border: 1px dashed var(--glass-border);
-  background: rgba(255, 255, 255, 0.32);
+  background: rgba(2, 6, 23, 0.34);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -290,8 +325,8 @@ body::after {
 .placeholder-icon {
   width: 64px;
   height: 64px;
-  color: var(--text-muted);
-  opacity: 0.6;
+  color: var(--accent);
+  opacity: 0.9;
 }
 
 .placeholder-content p {
@@ -308,7 +343,7 @@ body::after {
   position: absolute;
   inset: 16px;
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.95);
+  background: rgba(2, 6, 23, 0.82);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -322,7 +357,7 @@ body::after {
 .spinner {
   width: 48px;
   height: 48px;
-  border: 4px solid rgba(37, 99, 235, 0.2);
+  border: 4px solid rgba(56, 189, 248, 0.16);
   border-top-color: var(--accent);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
@@ -340,7 +375,7 @@ body::after {
 
 .control-panel {
   background: var(--surface);
-  border-radius: 18px;
+  border-radius: var(--radius-lg);
   box-shadow: var(--shadow);
   padding: 24px;
   display: flex;
@@ -364,7 +399,8 @@ body::after {
 
 .panel-header h2 {
   margin: 0;
-  font-size: 1.1rem;
+  font-size: 1.18rem;
+  letter-spacing: -0.02em;
 }
 
 .icon-btn {
@@ -372,7 +408,7 @@ body::after {
   height: 36px;
   padding: 8px;
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: 12px;
   background: var(--surface);
   cursor: pointer;
   transition: all 0.2s ease;
@@ -403,7 +439,7 @@ body::after {
 
 .control-label {
   font-size: 0.9rem;
-  color: var(--text-muted);
+  color: #b6c2d2;
   margin-bottom: 6px;
   display: flex;
   gap: 8px;
@@ -420,19 +456,25 @@ body::after {
 input[type="text"],
 select {
   width: 100%;
-  padding: 10px 12px;
-  border-radius: 10px;
+  padding: 12px 13px;
+  border-radius: 12px;
   border: 1px solid var(--border);
   font-size: 0.95rem;
   transition: all 0.2s ease;
-  background: var(--surface);
+  background: rgba(2, 6, 23, 0.36);
+  color: var(--text);
+}
+
+select option {
+  background: #0f172a;
+  color: var(--text);
 }
 
 input[type="text"]:focus,
 select:focus {
   outline: none;
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.16);
   transform: translateY(-1px);
 }
 
@@ -549,7 +591,7 @@ button {
   flex: 1 1 0;
   min-width: 0;
   padding: 12px 16px;
-  border-radius: 10px;
+  border-radius: 12px;
   border: none;
   font-weight: 600;
   font-size: 0.95rem;
@@ -557,7 +599,7 @@ button {
   transition: all 0.2s ease;
   color: #fff;
   background: var(--accent);
-  box-shadow: 0 10px 20px rgba(37, 99, 235, 0.22);
+  box-shadow: 0 14px 28px rgba(14, 165, 233, 0.2);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -602,12 +644,12 @@ button:disabled {
 }
 
 .btn-primary {
-  background: var(--accent);
-  box-shadow: 0 10px 20px rgba(37, 99, 235, 0.22);
+  background: linear-gradient(135deg, #0ea5e9 0%, #2563eb 100%);
+  box-shadow: 0 14px 28px rgba(14, 165, 233, 0.22);
 }
 
 .btn-primary:hover {
-  background: var(--accent-strong);
+  background: linear-gradient(135deg, #0284c7 0%, #1d4ed8 100%);
 }
 
 .btn-warning {
@@ -635,8 +677,9 @@ button:disabled {
   display: flex;
   gap: 0;
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: 12px;
   overflow: hidden;
+  background: rgba(2, 6, 23, 0.28);
 }
 
 .source-btn {
@@ -666,7 +709,7 @@ button:disabled {
 }
 
 .source-btn.active {
-  background: var(--accent);
+  background: linear-gradient(135deg, #0ea5e9 0%, #2563eb 100%);
   color: #fff;
   box-shadow: none !important;
 }
@@ -691,8 +734,8 @@ button:disabled {
 .file-drop-zone {
   position: relative;
   border: 2px dashed var(--border);
-  border-radius: 10px;
-  background: var(--surface-muted);
+  border-radius: 14px;
+  background: rgba(2, 6, 23, 0.28);
   cursor: pointer;
   transition: all 0.2s ease;
   overflow: hidden;
@@ -762,7 +805,7 @@ button:disabled {
 .upload-progress-bar {
   height: 100%;
   width: 0%;
-  background: linear-gradient(90deg, var(--accent) 0%, #60a5fa 100%);
+  background: linear-gradient(90deg, #38bdf8 0%, #2563eb 100%);
   border-radius: 4px;
   transition: width 0.2s ease;
 }
@@ -790,6 +833,15 @@ button:disabled {
     grid-template-columns: 1fr;
   }
 
+  .app-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .status-badges {
+    justify-content: flex-start;
+  }
+
   .control-panel {
     position: static;
   }
@@ -804,6 +856,15 @@ button:disabled {
     padding: 18px;
   }
 
+  .app-brand {
+    align-items: flex-start;
+  }
+
+  .brand-logo {
+    width: 46px;
+    height: 46px;
+  }
+
   .stream-panel {
     padding: 12px;
     min-height: 300px;
@@ -816,5 +877,9 @@ button:disabled {
   .control-panel {
     padding: 18px;
     gap: 16px;
+  }
+
+  .button-row {
+    flex-direction: column;
   }
 }
