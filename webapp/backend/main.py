@@ -16,6 +16,7 @@ from typing import Optional, Set, Dict
 from dataclasses import dataclass
 from threading import Lock
 from utils.traffic_analysis import TrafficAnalysisService
+from utils.paddleocr_config import paddleocr_kwargs
 from utils.utils import BGR_COLORS, check_legit_plate, crop_expanded_plate, draw_text
 import os
 from typing import List
@@ -101,12 +102,7 @@ class ParkingPlatePipeline:
         except Exception:
             pass
 
-        ocr_kwargs: Dict[str, object] = dict(
-            lang="en",
-            use_doc_orientation_classify=False,
-            use_doc_unwarping=False,
-            use_textline_orientation=False,
-        )
+        ocr_kwargs = paddleocr_kwargs(lang="en")
         try:
             if "use_gpu" in inspect.signature(PaddleOCR.__init__).parameters:
                 ocr_kwargs["use_gpu"] = str(self.device).startswith("cuda")

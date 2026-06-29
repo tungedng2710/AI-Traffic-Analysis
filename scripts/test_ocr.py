@@ -9,6 +9,7 @@ import numpy as np
 from paddleocr import PaddleOCR
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from utils.paddleocr_config import paddleocr_kwargs
 from utils.utils import check_legit_plate
 
 @lru_cache(maxsize=1)
@@ -19,20 +20,11 @@ def get_ocr(use_mobile: bool = False) -> PaddleOCR:
         PaddleOCR: Configured OCR engine instance.
     """
     if use_mobile:
-        return PaddleOCR(
-                    text_detection_model_name="PP-OCRv5_mobile_det",
-                    text_recognition_model_name="PP-OCRv5_mobile_rec",
-                    use_doc_orientation_classify=False,
-                    use_doc_unwarping=False,
-                    use_textline_orientation=False,
-                    device="cpu"
-                )
+        kwargs = paddleocr_kwargs(lang="en")
+        kwargs["device"] = "cpu"
+        return PaddleOCR(**kwargs)
     else:
-        return PaddleOCR(
-            use_doc_orientation_classify=False,
-            use_doc_unwarping=False,
-            use_textline_orientation=False,
-        )
+        return PaddleOCR(**paddleocr_kwargs(lang="en"))
 
 
 def extract_plate_info(
