@@ -51,6 +51,7 @@ from starlette.concurrency import run_in_threadpool
 from ultralytics import YOLO
 from paddleocr import PaddleOCR
 
+from utils.paddleocr_config import paddleocr_kwargs
 from utils.utils import check_legit_plate, crop_expanded_plate
 
 
@@ -149,14 +150,7 @@ class PlatePipeline:
         except Exception:
             pass
 
-        ocr_kwargs: Dict[str, object] = dict(
-            lang="en",
-            # text_detection_model_name="PP-OCRv5_mobile_det",
-            # text_recognition_model_name="PP-OCRv5_mobile_rec",
-            use_doc_orientation_classify=False,
-            use_doc_unwarping=False,
-            use_textline_orientation=False,
-        )
+        ocr_kwargs = paddleocr_kwargs(lang="en")
         if self.device.startswith("cuda"):
             ocr_kwargs["device"] = "cpu"
         self.ocr = PaddleOCR(**ocr_kwargs)

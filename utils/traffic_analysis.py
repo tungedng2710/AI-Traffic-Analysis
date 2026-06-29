@@ -8,6 +8,7 @@ import torch
 from ultralytics import YOLO
 from paddleocr import PaddleOCR
 
+from utils.paddleocr_config import paddleocr_kwargs
 from tracking.deep_sort import DeepSort
 from tracking.sort import Sort
 from utils.utils import (
@@ -54,11 +55,7 @@ class TrafficAnalysisService:
 
         # OCR
         self.read_plate = bool(getattr(self.opts, "read_plate", True))
-        ocr_kwargs = dict(
-            use_doc_orientation_classify=False,
-            use_doc_unwarping=False,
-            use_textline_orientation=False,
-        )
+        ocr_kwargs = paddleocr_kwargs(lang=getattr(self.opts, "ocr_lang", "en"))
         try:
             if "use_gpu" in inspect.signature(PaddleOCR.__init__).parameters:
                 ocr_kwargs["use_gpu"] = self._is_cuda
