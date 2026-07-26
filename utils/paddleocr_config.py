@@ -8,10 +8,10 @@ def paddleocr_kwargs(lang: str = "en") -> Dict[str, object]:
         "lang": lang,
         "ocr_version": os.environ.get("PADDLEOCR_VERSION", "PP-OCRv6"),
         "text_detection_model_name": os.environ.get(
-            "PADDLEOCR_DET_MODEL", "PP-OCRv6_small_det"
+            "PADDLEOCR_DET_MODEL", "PP-OCRv6_medium_det"
         ),
         "text_recognition_model_name": os.environ.get(
-            "PADDLEOCR_REC_MODEL", "PP-OCRv6_small_rec"
+            "PADDLEOCR_REC_MODEL", "PP-OCRv6_medium_rec"
         ),
         "use_doc_orientation_classify": False,
         "use_doc_unwarping": False,
